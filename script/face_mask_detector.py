@@ -22,12 +22,12 @@ class FaceMaskDetector:
     }
 
     def __init__(self, 
-                 mask_model_path="script/model/final_mask_detection_model.h5", 
+                 mask_model_path="script/model/final_model.keras", 
                  face_model_path="script/model/res10_300x300_ssd_iter_140000.caffemodel",
                  prototxt_path="script/model/deploy.prototxt",
                  threshold_path="script/model/optimal_thresholds.json",
                  confidence_threshold=0.5):
-
+        
         self.confidence_threshold = confidence_threshold
         
         # Load thresholds
@@ -48,10 +48,18 @@ class FaceMaskDetector:
         print(f"[INFO] Classes: {self.class_names}")
         
         # Check if model paths exist
-        for path in [mask_model_path, face_model_path, prototxt_path]:
+        for path in [face_model_path, prototxt_path]:
             if not os.path.exists(path):
                 raise FileNotFoundError(f"Model file not found: {path}")
-        
+        if not os.path.exists(mask_model_path):
+            print(f"[INFO] Mask model not found at {mask_model_path}, downloading from Google Drive...")
+            try:
+                self.download_mask_model(
+                    url="https://drive.google.com/file/d/1hyzxym3EMOw0DBSuictjTvzFcTZl8bi3/view?usp=sharing",
+                    output_path=mask_model_path
+                )
+            except Exception as e:
+                raise Exception(f"Failed to download mask model: {e}")
         # Load the face detector model
         print("[INFO] Loading face detector model...")
         self.face_net = cv2.dnn.readNet(prototxt_path, face_model_path)
@@ -84,7 +92,7 @@ class FaceMaskDetector:
         debug_output = {}
         (h, w) = frame.shape[:2]
         
-        # Create a blob from the image - explain this step
+        # 1 Create a blob from the image - explain this step
         blob = cv2.dnn.blobFromImage(frame, 1.0, (300, 300), (104.0, 177.0, 123.0))
         
         if debug:
@@ -113,7 +121,7 @@ class FaceMaskDetector:
                 "expected by the face detection model (SSD with 300x300 input)."
             )
         
-        # Pass the blob through the face detection network
+        #2 Pass the blob through the face detection network
         self.face_net.setInput(blob)
         detections = self.face_net.forward()
         
@@ -131,7 +139,7 @@ class FaceMaskDetector:
         if debug:
             detection_visualization = frame.copy()
         
-        # Process detections
+        #3 Process detections
         for i in range(0, detections.shape[2]):
             confidence = detections[0, 0, i, 2]
             
@@ -193,8 +201,8 @@ class FaceMaskDetector:
         debug_output = {}
         
         try:
-            # Preprocess face for mask detection
-            # Convert to RGB for the model
+            #4 Preprocess face for mask detection
+            #4.1 Convert to RGB for the model
             face_rgb = cv2.cvtColor(face_roi, cv2.COLOR_BGR2RGB)
             
             if debug:
@@ -204,7 +212,7 @@ class FaceMaskDetector:
                     "to RGB format because most deep learning models expect RGB input."
                 )
             
-            # Resize to the expected input size
+            #4.2 Resize to the expected input size
             face_resized = cv2.resize(face_rgb, (300, 300))
             
             if debug:
@@ -215,7 +223,7 @@ class FaceMaskDetector:
                     "regardless of the original face size."
                 )
             
-            # Normalize pixel values
+            #4.3 Normalize pixel values
             face_normalized = face_resized.astype("float") / 255.0
             face_batch = np.expand_dims(face_normalized, axis=0)
             
@@ -229,7 +237,7 @@ class FaceMaskDetector:
                 )
             
             if self.framework == "tensorflow":
-                # Make prediction with TensorFlow model
+                #5 Make prediction with TensorFlow model
                 prediction = self.mask_net.predict(face_batch, verbose=0)[0]
                 
                 if debug:
@@ -240,7 +248,7 @@ class FaceMaskDetector:
                         f"{', '.join([f'{self.class_names[i]}: {p:.4f}' for i, p in enumerate(prediction)])}"
                     )
                 
-                # Apply thresholds
+                #6 Apply thresholds
                 max_index = -1
                 max_confidence = -1
                 
@@ -249,7 +257,7 @@ class FaceMaskDetector:
                         max_confidence = prediction[i]
                         max_index = i
                 
-                # If no class meets threshold, choose the highest probability
+                #7 If no class meets threshold, choose the highest probability
                 if max_index == -1:
                     max_index = np.argmax(prediction)
                 
@@ -268,7 +276,7 @@ class FaceMaskDetector:
                     )
             
             else:  # OpenCV DNN
-                # Prepare blob for OpenCV model
+                #8 Prepare blob for OpenCV model
                 blob = cv2.dnn.blobFromImage(face_roi, 1.0, (224, 224), (104.0, 177.0, 123.0))
                 self.mask_net.setInput(blob)
                 prediction = self.mask_net.forward()
@@ -276,7 +284,7 @@ class FaceMaskDetector:
                 label = self.LABELS[max_index]
                 confidence = float(prediction[0][max_index])
             
-            # Map the index to color
+            #9 Map the index to color
             if max_index == 0:  # With mask
                 color = self.COLORS["with_mask"]
             elif max_index == 1:  # Without mask
