@@ -1,0 +1,1 @@
+{"class_names": ["incorrectmask", "withmask", "withoutmask"], "thresholds": [0.4140453040599823, 0.2948716878890991, 0.6300979256629944]}

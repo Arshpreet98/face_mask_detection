@@ -25,7 +25,8 @@ class FaceMaskDetector:
                  mask_model_path="script/model/final_model.keras", 
                  face_model_path="script/model/res10_300x300_ssd_iter_140000.caffemodel",
                  prototxt_path="script/model/deploy.prototxt",
-                 threshold_path="script/model/optimal_thresholds.json",
+                #  threshold_path="script/model/optimal_thresholds.json",
+                 threshold_path=None,
                  confidence_threshold=0.5):
         
         self.confidence_threshold = confidence_threshold

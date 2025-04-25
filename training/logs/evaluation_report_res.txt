@@ -1,0 +1,61 @@
+
+    ===============================================
+    FACE MASK DETECTION - MODEL EVALUATION REPORT
+    ===============================================
+
+    Model Architecture: EfficientNetB3 with custom classification head
+    Training Strategy: Progressive fine-tuning
+
+    VALIDATION METRICS:
+    ------------------
+    Accuracy:  0.9219
+    Loss:      0.5478
+    Precision: 0.9219
+    Recall:    0.9219
+    F1 Score:  0.9219
+
+    CLASS-WISE METRICS:
+    ------------------
+    
+    incorrectmask:
+      Precision: 0.8389
+      Recall:    0.9124
+      F1 Score:  0.8741
+      Support:   137.0
+
+    withmask:
+      Precision: 0.9189
+      Recall:    0.8553
+      F1 Score:  0.8860
+      Support:   159.0
+
+    withoutmask:
+      Precision: 1.0000
+      Recall:    0.9939
+      F1 Score:  0.9970
+      Support:   165.0
+
+    OPTIMAL THRESHOLDS:
+      incorrectmask: 0.3281
+      withmask: 0.1222
+      withoutmask: 0.9971
+
+    TRAINING CONFIGURATION:
+      train_data_dir: D:\Code\major\data\Dataset\train
+      validation_data_dir: D:\Code\major\data\Dataset1\validation
+      img_size: 300
+      batch_size: 32
+      initial_lr: 0.001
+      fine_tune_lr: 0.0001
+      final_fine_tune_lr: 5e-05
+      dropout_rate: 0.3
+      l2_reg: 0.0001
+      train_epochs: 20
+      fine_tune_epochs: 20
+      final_fine_tune_epochs: 15
+      model_dir: model
+      logs_dir: logs
+      early_stopping_patience: 10
+      reduce_lr_patience: 5
+      use_mixup: False
+      test_split: 0.2
